@@ -61,67 +61,157 @@ Image recognition is defined as a specific category within the broader field of 
 
 ---
 
-## 5. Project Roadmap
-
-### Step 1: Research & Design
-- Conduct an in-depth review of the three core academic references listed in Section 4.
-- Map out the full pipeline from raw image data to final classification output.
-- Identify which ResNet34 layers will be frozen vs. fine-tuned during transfer learning.
-- Define the exact class labels to be used: `open`, `closed`, and optionally `partial`.
-
-### Step 2: Data Acquisition
-- Write a scraping script (e.g., using `duckduckgo-search`) to collect carabiner images from the web.
-- Manually review and label each image, placing them in `data/raw/open` and `data/raw/closed` directories.
-- Remove duplicate, corrupt, or irrelevant images.
-- Target a minimum of 150–200 images per class.
-
-### Step 3: Development I — General Training
-- Load the pre-trained ResNet34 weights from `torchvision.models`.
-- Freeze all layers except the final classification head.
-- Replace the fully connected layer with a two-class output head.
-- Train for 5–10 epochs using Cross-Entropy loss and an AdamW optimizer.
-
-### Step 4: Development II — Specialized Fine-Tuning
-- Unfreeze the full model and reduce the learning rate significantly (e.g., by 10x).
-- Apply data augmentation: random crops, horizontal/vertical flips, color jitter, and rotation.
-- Continue training for an additional 10–15 epochs, saving the best checkpoint by validation accuracy.
-
-### Step 5: Evaluation
-- Run the model against a held-out test set (20% of total data).
-- Report Accuracy, Precision, Recall, and F1 Score.
-- Generate a confusion matrix and analyze false negatives specifically (open predicted as closed).
-- Test on edge-case "Partially Open" images to probe decision boundaries.
-
-### Step 6: Finalization
-- Write the final project report documenting methodology, results, and limitations.
-- Design presentation slides summarizing the problem, approach, and key findings.
-- Package the model with a simple `streamlit` or `gradio` demo for live inference.
+## 5. Project Phases
 
 ---
 
-## 6. Implementation Instructions
+### Phase 1: Environment Setup
+**Goal:** Establish a reproducible, working development environment before any code is written.
 
-To develop this machine learning project, follow these structured steps:
+- Install Python (3.10+) and create a virtual environment (`venv` or `conda`).
+- Install core dependencies: `torch`, `torchvision`, `numpy`, `pandas`, `matplotlib`, `Pillow`, `scikit-learn`.
+- Create the standard project directory structure:
+  ```
+  project/
+  ├── data/
+  │   ├── raw/
+  │   │   ├── open/
+  │   │   └── closed/
+  │   └── processed/
+  ├── models/
+  ├── notebooks/
+  ├── src/
+  └── scripts/
+  ```
+- Set up a `requirements.txt` or `pyproject.toml` to lock dependency versions.
+- Initialize a Git repository and connect to GitHub.
 
-### Step 1: Environment & Directory Setup
-* **Dependencies**: Initialize a Python environment. Core libraries should include `torch`, `torchvision`, `numpy`, `pandas`, `matplotlib`, `Pillow`, and optionally `scikit-learn` or `fastai`.
-* **Scaffolding**: Create standard project directories (`/data`, `/src`, `/notebooks`, `/models`, `/scripts`).
+**Deliverable:** A clean project skeleton with all dependencies installed and a working Python environment.
 
-### Step 2: Data Acquisition & Preprocessing
-* **Image Scraping Script**: Write a script (e.g., using `duckduckgo-search` or `BeautifulSoup`) to scrape images of carabiners.
-* **Data Structure**: Organize scraped images into classification folders: `data/raw/open` and `data/raw/closed`.
-* **Cleaning**: Provide a utility to identify and remove corrupt or non-image files, and filter out irrelevant images.
-* **Augmentation**: Implement data transformations (random cropping, rotations, flipping, and brightness/contrast adjustments) to mimic various real-world lighting conditions and carabiner orientations.
+---
 
-### Step 3: Model Training
-* **Base Model Configuration**: Load a pre-trained **ResNet34** model structure. Ensure the initial convolution layers are frozen to leverage transfer learning.
-* **Custom Head**: Replace the fully connected classification layer with a new one that targets two classes: Open and Closed.
-* **Training Loop**: Set up the training loop using an appropriate loss function (like Cross-Entropy) and an optimizer (like AdamW). Use a learning rate finder to select optimal starting rates. Unfreeze the full model for fine-tuning after initial training of the custom head.
+### Phase 2: Research & Planning
+**Goal:** Deeply understand the problem domain and design the full implementation pipeline before writing any ML code.
 
-### Step 4: Evaluation & Validation
-* **Metrics**: Calculate and report Accuracy, Precision, Recall, and the F1 Score.
-* **Confusion Matrix**: Output a confusion matrix to identify false positives vs. false negatives. Note that failing to detect an open carabiner (predicting closed when open) is the most dangerous failure mode and should be minimized.
-* **Edge Case Analysis**: Test the model on "Partially Open" states to evaluate its boundaries.
+- Read and summarize all three academic references from Section 4.
+- Map out the end-to-end pipeline: image scraping → preprocessing → training → evaluation → deployment.
+- Decide on final class labels: `open`, `closed`, and optionally `partial`.
+- Determine which ResNet34 layers to freeze vs. fine-tune.
+- Document design decisions in a planning notebook or README section.
 
-### Step 5: Interface / Deployment
-* **Demo App**: Provide a simple web interface script (using `streamlit` or `gradio`) where users can upload an image of a carabiner and instantly see the model's prediction.
+**Deliverable:** A written pipeline plan and annotated notes from each reference paper.
+
+---
+
+### Phase 3: Data Collection & Labeling
+**Goal:** Build a quality, labeled image dataset large enough to train a reliable classifier.
+
+- Write a scraping script using `duckduckgo-search` or similar to query images of carabiners.
+- Download images and sort them manually into `data/raw/open/` and `data/raw/closed/`.
+- Remove duplicates, corrupt files, and irrelevant images.
+- Target at least **150–200 images per class** (300–400 total minimum).
+- Document label definitions: what constitutes "open" vs. "closed" vs. "partial."
+
+**Deliverable:** A labeled, cleaned dataset organized in the correct folder structure, ready for preprocessing.
+
+---
+
+### Phase 4: Data Preprocessing & Augmentation
+**Goal:** Transform raw images into a format suitable for model input, and expand the dataset artificially to improve generalization.
+
+- Resize all images to a consistent size (e.g., 224×224 for ResNet34 compatibility).
+- Normalize pixel values using ImageNet mean and standard deviation.
+- Split the dataset: **70% train / 10% validation / 20% test** — keep the test set completely held out.
+- Apply augmentation to the training split only:
+  - Random horizontal/vertical flips
+  - Random rotation (up to 30°)
+  - Color jitter (brightness, contrast, saturation)
+  - Random cropping and resizing
+- Use `torchvision.transforms` or `albumentations` for the pipeline.
+
+**Deliverable:** A `DataLoader`-ready dataset with augmentation applied to training data only.
+
+---
+
+### Phase 5: Model Training — Transfer Learning (Frozen)
+**Goal:** Train only the classification head on the new dataset, using ResNet34's pre-learned feature extraction.
+
+- Load pre-trained ResNet34 weights from `torchvision.models`.
+- Freeze all convolutional layers (set `requires_grad = False`).
+- Replace the final fully connected layer with a new 2-class output head.
+- Train for **5–10 epochs** using:
+  - Loss: Cross-Entropy
+  - Optimizer: AdamW
+  - Learning Rate: ~1e-3
+- Monitor training and validation loss/accuracy each epoch.
+- Save the best checkpoint by validation accuracy.
+
+**Deliverable:** A trained classification head checkpoint and logged training metrics.
+
+---
+
+### Phase 6: Model Fine-Tuning (Unfrozen)
+**Goal:** Refine the full model end-to-end to specialize on carabiner classification.
+
+- Load the best checkpoint from Phase 5.
+- Unfreeze all model layers.
+- Reduce the learning rate significantly (e.g., ~1e-4 or lower).
+- Continue training for **10–15 additional epochs**.
+- Use a learning rate scheduler (e.g., `CosineAnnealingLR`) to avoid overshooting.
+- Save the best checkpoint by validation accuracy.
+
+**Deliverable:** A fully fine-tuned model checkpoint that outperforms the frozen-head version.
+
+---
+
+### Phase 7: Evaluation & Analysis
+**Goal:** Rigorously test the model's performance on unseen data, with special attention to safety-critical failure modes.
+
+- Evaluate on the held-out **test set** (never seen during training or fine-tuning).
+- Report the following metrics:
+  - Accuracy
+  - Precision, Recall, F1 Score (per class)
+- Generate and analyze a **confusion matrix**.
+  - Pay particular attention to false negatives: predicting *closed* when the carabiner is actually *open* is the most dangerous error.
+- Test on "Partially Open" images to understand the model's decision boundary.
+- Visualize attention maps or grad-CAM outputs to understand what the model focuses on.
+
+**Deliverable:** A full evaluation report with metrics, confusion matrix, and failure mode analysis.
+
+---
+
+### Phase 8: Results Visualization & Presentation
+**Goal:** Display model results clearly and produce all final presentation deliverables.
+
+- Build a simple results dashboard (e.g., Jupyter notebook) that displays:
+  - Training and validation loss/accuracy curves over epochs.
+  - The confusion matrix from the test set evaluation.
+  - Per-class Precision, Recall, and F1 Score.
+  - A sample grid of correctly and incorrectly classified images from the test set.
+- Write the final project report covering: methodology, dataset details, results, and limitations.
+- Design presentation slides following the rubric in Section 6.
+
+**Deliverable:** A results visualization notebook/dashboard, a final written report, and a presentation slide deck exported as PDF.
+
+---
+
+## 6. Presentation Requirements
+
+The project will be presented as a **recorded video (5–10 minutes)**. Do not exceed 10 minutes.
+
+### Submission Checklist
+- [ ] Recorded video (sharable link)
+- [ ] Slide deck exported as **PDF**
+- [ ] Video link included on the **first page** of the PDF slides
+
+### Required Slide Content
+The presentation must cover the following topics in order:
+
+1. **Problem & Challenges** — Define the carabiner classification problem and explain why it is difficult (background noise, orientation variation, subtle state differences, etc.).
+2. **Motivation** — Explain the personal and safety-critical motivation for automating gear state detection.
+3. **Existing Related Approaches** — Summarize the three papers from Section 4 and how they inform this project.
+4. **Method** — Describe the approach being duplicated/adapted: ResNet34 transfer learning, dataset construction, training strategy.
+5. **Results & Observations** — Present accuracy, precision/recall/F1, confusion matrix, and any notable patterns or failure modes observed.
+6. **Conclusion & Future Work** — Summarize what was achieved and what could be improved or expanded (e.g., a larger dataset, live video inference, more fine-grained states).
+
+> **Note:** If the project is incomplete by the deadline, present what has been completed and clearly state what results are expected but not yet obtained.
