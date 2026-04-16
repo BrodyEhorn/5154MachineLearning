@@ -88,6 +88,8 @@ Image recognition is defined as a specific category within the broader field of 
 
 **Deliverable:** A clean project skeleton with all dependencies installed and a working Python environment.
 
+> **Status Note (Phase 1):** COMPLETED. Created local `venv`, installed core ML dependencies, built out the `data/`, `models/`, `notebooks/`, `scripts/`, and `src/` directory structure, generated `requirements.txt`, and configured `.gitignore` to prevent massive data dumps to the connected Git repository.
+
 ---
 
 ### Phase 2: Research & Planning
@@ -101,6 +103,8 @@ Image recognition is defined as a specific category within the broader field of 
 
 **Deliverable:** A written pipeline plan and annotated notes from each reference paper.
 
+> **Status Note (Phase 2):** COMPLETED. Generated `README.md` containing research summaries and pipeline definitions. Decided to utilize a strict binary classification (`Open` vs `Closed`), intentionally categorizing any "partial" states as `Open` to adhere to maximum human-safety constraints.
+
 ---
 
 ### Phase 3: Data Collection & Labeling
@@ -113,6 +117,8 @@ Image recognition is defined as a specific category within the broader field of 
 - Document label definitions: what constitutes "open" vs. "closed" vs. "partial."
 
 **Deliverable:** A labeled, cleaned dataset organized in the correct folder structure, ready for preprocessing.
+
+> **Status Note (Phase 3):** COMPLETED. Initial scraping methods experienced significant metadata bleed (engines returning closed images for "open" search terms). Circumvented visual blind-spots by building a custom UI (`scripts/rapid_sorter.py`) enabling high-speed human auditing. Total image count hit 455 (352 Closed, 103 Open) meeting the 300-400 absolute minimum criteria. Data Augmentation in Phase 4 will handle the strict class imbalance.
 
 ---
 
