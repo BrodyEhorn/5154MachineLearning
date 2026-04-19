@@ -184,6 +184,8 @@ Image recognition is defined as a specific category within the broader field of 
 
 **Deliverable:** A full evaluation report with metrics, confusion matrix, and failure mode analysis.
 
+> **Status Note (Phase 7):** COMPLETED. Successfully generated predictions on the test set, rendered a confusion matrix, analyzed False Negatives, and used Grad-CAM overlays to ensure the network is learning meaningful regional structures instead of environment bias.
+
 ---
 
 ### Phase 8: Results Visualization & Presentation
